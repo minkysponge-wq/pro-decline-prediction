@@ -33,7 +33,7 @@ pip install -e .
 
 python -m prodecline all --fast   # ~5 min: data -> train -> ablation -> figures -> summary
 python -m prodecline all          # full paper grids, 10-fold CV (~1 h on 2 cores; resumable)
-pytest                            # 19 tests, ~10 s
+python -m pytest                  # 19 tests, ~10 s
 jupyter notebook notebooks/demo.ipynb   # live demo
 ```
 

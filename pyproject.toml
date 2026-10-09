@@ -24,4 +24,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]   # tests run even without `pip install -e .`
 addopts = "-q"

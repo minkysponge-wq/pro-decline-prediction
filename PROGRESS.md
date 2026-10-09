@@ -29,4 +29,4 @@
 3. [ ] Edit the "Team contributions" table in the README to reflect your real split.
 4. [ ] Submit `docs/writeup.pdf`.
 5. [ ] Download the slides (Share › Export › PowerPoint or PDF) and rehearse with `docs/QA_prep.md`.
-6. [ ] Before the demo, test on your own laptop: `pip install -r requirements.txt && pip install -e . && pytest && python -m prodecline all --fast`.
+6. [ ] Before the demo, test on your own laptop: `pip install -r requirements.txt && pip install -e . && python -m pytest && python -m prodecline all --fast`.
