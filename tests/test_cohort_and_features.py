@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prodecline.config import CONFIG
 from prodecline.data.simulate import EHRSimulator
 from prodecline.features.build import clean_vitals, time_weight
 from tests.conftest import SMALL

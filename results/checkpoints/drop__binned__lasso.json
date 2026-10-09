@@ -1,12 +1,12 @@
 {
-  "fingerprint": "dc4c0d127e37403b",
+  "fingerprint": "e3c0924f5cba166e",
   "row": {
     "outcome": "drop",
     "lab_strategy": "binned",
     "model": "lasso",
     "cv_auroc_mean": 0.7397527409198814,
     "cv_auroc_std": 0.011426480379346656,
-    "fit_seconds": 3.227287158000024,
+    "fit_seconds": 2.503807806000168,
     "test_auroc": 0.7301835627868168,
     "test_auroc_ci_low": 0.6390337977281371,
     "test_auroc_ci_high": 0.8021715349110818,

@@ -60,7 +60,11 @@ def get_model_specs(seed: int, fast: bool = False) -> list[ModelSpec]:
     lam = 10.0 ** np.array([-1, 1, 3]) if fast else lam_full
 
     specs = [
-        ModelSpec("lasso", "logistic", logistic("lasso", seed), {"C": _c_grid(lam)}),
+        # lambda = 10^-2 (C = 100, essentially unpenalised) is dropped for LASSO:
+        # liblinear's L1 solver does not converge in hours on near-separable
+        # folds of the threshold label, and the optimum is always far from it.
+        ModelSpec("lasso", "logistic", logistic("lasso", seed),
+                  {"C": _c_grid(lam[lam >= 0.1])}),
         ModelSpec("ridge", "logistic", logistic("ridge", seed), {"C": _c_grid(lam)}),
         ModelSpec(
             "elasticnet", "logistic", logistic("elasticnet", seed),

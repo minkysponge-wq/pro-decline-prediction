@@ -75,15 +75,16 @@ def _fingerprint(cfg: Config, fast: bool) -> str:
     for name in ("features.csv", "cohort.csv", "split.csv"):
         h.update(_processed(cfg, name).read_bytes())
     train = dataclasses.replace(cfg.train, n_jobs=0)    # parallelism doesn't change results
-    h.update(repr((fast, train, cfg.features,
-                   [(s.name, s.grid) for s in get_model_specs(cfg.train.seed, fast)])).encode())
+    h.update(repr((fast, train, cfg.features)).encode())
     return h.hexdigest()[:16]
 
 
 class _Checkpoints:
     """One small JSON + CSV per (outcome, lab strategy, model) so an interrupted
-    run resumes where it stopped. Checkpoints from different data/settings are
-    ignored automatically (fingerprint mismatch)."""
+    run resumes where it stopped. Each checkpoint is keyed on the data, the
+    training settings and that model's own estimator + grid (the ensemble: its
+    members' chosen hyper-parameters), so changing one grid retrains only that
+    model and anything depending on it."""
 
     def __init__(self, cfg: Config, fingerprint: str):
         self.dir = cfg.paths.results_dir / "checkpoints"
@@ -94,20 +95,24 @@ class _Checkpoints:
     def _paths(self, key: str):
         return self.dir / f"{key}.json", self.dir / f"{key}__pred.csv"
 
-    def load(self, key: str, outcome: str, lab: str, model: str):
+    def _fp(self, extra: str) -> str:
+        return hashlib.sha256(f"{self.fp}|{extra}".encode()).hexdigest()[:16]
+
+    def load(self, key: str, outcome: str, lab: str, model: str, extra: str):
         meta_p, pred_p = self._paths(key)
         model_p = _model_path(self.cfg, outcome, lab, model)
         if not (meta_p.exists() and pred_p.exists() and model_p.exists()):
             return None
         meta = json.loads(meta_p.read_text())
-        if meta.get("fingerprint") != self.fp:
+        if meta.get("fingerprint") != self._fp(extra):
             return None
         return meta, pd.read_csv(pred_p), joblib.load(model_p)
 
-    def save(self, key: str, row: dict, params: dict, pred: pd.DataFrame) -> None:
+    def save(self, key: str, row: dict, params: dict, pred: pd.DataFrame,
+             extra: str) -> None:
         meta_p, pred_p = self._paths(key)
         pred.to_csv(pred_p, index=False)
-        meta_p.write_text(json.dumps({"fingerprint": self.fp, "row": row,
+        meta_p.write_text(json.dumps({"fingerprint": self._fp(extra), "row": row,
                                       "best_params": params}, indent=2))
 
 
@@ -130,7 +135,8 @@ def stage_train(cfg: Config, fast: bool = False, fresh: bool = False) -> pd.Data
             best = {}
             for spec in get_model_specs(cfg.train.seed, fast=fast):
                 key = f"{outcome}__{lab}__{spec.name}"
-                hit = None if fresh else ckpt.load(key, outcome, lab, spec.name)
+                extra = repr((spec.estimator.get_params(), spec.grid))
+                hit = None if fresh else ckpt.load(key, outcome, lab, spec.name, extra)
                 if hit is not None:
                     meta, pred, est = hit
                     log.info("  %-14s resumed from checkpoint (CV AUROC %.3f)",
@@ -154,7 +160,7 @@ def stage_train(cfg: Config, fast: bool = False, fresh: bool = False) -> pd.Data
                     pd.DataFrame(search.cv_results_).drop(columns="params").to_csv(
                         cv_dir / f"{key}.csv", index=False)
                     joblib.dump(est, _model_path(cfg, outcome, lab, spec.name))
-                    ckpt.save(key, row, params, pred)
+                    ckpt.save(key, row, params, pred, extra)
                 best[spec.name] = est
                 rows.append(row)
                 preds.append(pred)
@@ -162,7 +168,9 @@ def stage_train(cfg: Config, fast: bool = False, fresh: bool = False) -> pd.Data
 
             # ---- soft-voting ensemble of tuned members
             key = f"{outcome}__{lab}__ensemble"
-            hit = None if fresh else ckpt.load(key, outcome, lab, "ensemble")
+            members = {m: best_params[f"{outcome}/{lab}/{m}"] for m in ENSEMBLE_MEMBERS}
+            extra = repr(sorted(members.items()))
+            hit = None if fresh else ckpt.load(key, outcome, lab, "ensemble", extra)
             if hit is not None:
                 meta, pred, _ = hit
                 row = meta["row"]
@@ -180,8 +188,7 @@ def stage_train(cfg: Config, fast: bool = False, fresh: bool = False) -> pd.Data
                                   is_prob)}
                 pred = _pred_frame(outcome, lab, "ensemble", X.index[te], y_te, score)
                 joblib.dump(ens, _model_path(cfg, outcome, lab, "ensemble"))
-                ckpt.save(key, row, {m: best_params[f"{outcome}/{lab}/{m}"]
-                                     for m in ENSEMBLE_MEMBERS}, pred)
+                ckpt.save(key, row, members, pred, extra)
             rows.append(row)
             preds.append(pred)
             log.info("  %-14s CV AUROC %.3f | TEST AUROC %.3f", "ensemble",
