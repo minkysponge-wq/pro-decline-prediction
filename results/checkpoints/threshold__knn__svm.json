@@ -1,0 +1,21 @@
+{
+  "fingerprint": "dc4c0d127e37403b",
+  "row": {
+    "outcome": "threshold",
+    "lab_strategy": "knn",
+    "model": "svm",
+    "cv_auroc_mean": 0.7381948030671733,
+    "cv_auroc_std": 0.036429870790220045,
+    "fit_seconds": 4.517085961999982,
+    "test_auroc": 0.818592873937421,
+    "test_auroc_ci_low": 0.7497032663780545,
+    "test_auroc_ci_high": 0.8717139472837176,
+    "test_auprc": 0.6484441359858177,
+    "test_prevalence": 0.22709163346613545,
+    "test_brier": NaN
+  },
+  "best_params": {
+    "C": 1.0,
+    "kernel": "rbf"
+  }
+}

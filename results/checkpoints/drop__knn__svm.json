@@ -1,0 +1,21 @@
+{
+  "fingerprint": "dc4c0d127e37403b",
+  "row": {
+    "outcome": "drop",
+    "lab_strategy": "knn",
+    "model": "svm",
+    "cv_auroc_mean": 0.6503918777373813,
+    "cv_auroc_std": 0.024288268303741038,
+    "fit_seconds": 4.263379071000003,
+    "test_auroc": 0.6214017521902379,
+    "test_auroc_ci_low": 0.5287833697890684,
+    "test_auroc_ci_high": 0.7049459363310449,
+    "test_auprc": 0.34112888531028474,
+    "test_prevalence": 0.18725099601593626,
+    "test_brier": NaN
+  },
+  "best_params": {
+    "C": 0.01,
+    "kernel": "rbf"
+  }
+}

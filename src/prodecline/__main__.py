@@ -8,6 +8,8 @@
     python -m prodecline summary     # print the results table
 
 Add ``--fast`` for a ~5-minute run (5-fold CV, small grids) - useful for demos.
+Training is checkpointed per model: an interrupted ``train`` resumes where it
+stopped (use ``--fresh`` to retrain everything).
 """
 from __future__ import annotations
 
@@ -46,6 +48,8 @@ def main(argv=None) -> None:
     parser.add_argument("stage", choices=["data", "train", "ablate", "figures", "all",
                                           "summary"])
     parser.add_argument("--fast", action="store_true", help="small grids, 5-fold CV")
+    parser.add_argument("--fresh", action="store_true",
+                        help="ignore training checkpoints and retrain everything")
     parser.add_argument("--n-jobs", type=int, default=None, help="parallel workers")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -70,7 +74,7 @@ def main(argv=None) -> None:
     if args.stage in ("data", "all"):
         pipeline.stage_data(cfg)
     if args.stage in ("train", "all"):
-        pipeline.stage_train(cfg, fast=args.fast)
+        pipeline.stage_train(cfg, fast=args.fast, fresh=args.fresh)
     if args.stage in ("ablate", "all"):
         pipeline.stage_ablation(cfg)
     if args.stage in ("figures", "all"):

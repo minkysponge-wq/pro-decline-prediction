@@ -2,6 +2,8 @@
 so stages can be re-run independently (e.g. re-plot without re-training)."""
 from __future__ import annotations
 
+import dataclasses
+import hashlib
 import json
 import logging
 import time
@@ -18,7 +20,7 @@ from .data.cohort import build_cohort
 from .data.simulate import EHRSimulator, RawEHR
 from .evaluation.metrics import evaluate, predict_score
 from .features.build import DEMO_CATEGORICAL, build_features
-from .models.registry import get_model_specs
+from .models.registry import ENSEMBLE_MEMBERS, get_model_specs
 from .models.training import cv_auroc, ensemble_from, split_patients, tune
 
 log = logging.getLogger(__name__)
@@ -67,13 +69,56 @@ def stage_data(cfg: Config) -> None:
     log.info("Split: %s", split.value_counts().to_dict())
 
 
-def stage_train(cfg: Config, fast: bool = False) -> pd.DataFrame:
+def _fingerprint(cfg: Config, fast: bool) -> str:
+    """Identifies the exact data + settings a checkpoint was trained on."""
+    h = hashlib.sha256()
+    for name in ("features.csv", "cohort.csv", "split.csv"):
+        h.update(_processed(cfg, name).read_bytes())
+    train = dataclasses.replace(cfg.train, n_jobs=0)    # parallelism doesn't change results
+    h.update(repr((fast, train, cfg.features,
+                   [(s.name, s.grid) for s in get_model_specs(cfg.train.seed, fast)])).encode())
+    return h.hexdigest()[:16]
+
+
+class _Checkpoints:
+    """One small JSON + CSV per (outcome, lab strategy, model) so an interrupted
+    run resumes where it stopped. Checkpoints from different data/settings are
+    ignored automatically (fingerprint mismatch)."""
+
+    def __init__(self, cfg: Config, fingerprint: str):
+        self.dir = cfg.paths.results_dir / "checkpoints"
+        self.dir.mkdir(parents=True, exist_ok=True)
+        self.fp = fingerprint
+        self.cfg = cfg
+
+    def _paths(self, key: str):
+        return self.dir / f"{key}.json", self.dir / f"{key}__pred.csv"
+
+    def load(self, key: str, outcome: str, lab: str, model: str):
+        meta_p, pred_p = self._paths(key)
+        model_p = _model_path(self.cfg, outcome, lab, model)
+        if not (meta_p.exists() and pred_p.exists() and model_p.exists()):
+            return None
+        meta = json.loads(meta_p.read_text())
+        if meta.get("fingerprint") != self.fp:
+            return None
+        return meta, pd.read_csv(pred_p), joblib.load(model_p)
+
+    def save(self, key: str, row: dict, params: dict, pred: pd.DataFrame) -> None:
+        meta_p, pred_p = self._paths(key)
+        pred.to_csv(pred_p, index=False)
+        meta_p.write_text(json.dumps({"fingerprint": self.fp, "row": row,
+                                      "best_params": params}, indent=2))
+
+
+def stage_train(cfg: Config, fast: bool = False, fresh: bool = False) -> pd.DataFrame:
     paths = cfg.paths.ensure()
     X, cohort, split = load_dataset(cfg)
     tr, te = split.eq("train").to_numpy(), split.eq("test").to_numpy()
     memory = Memory(paths.cache_dir / "pipelines", verbose=0)
     cv_dir = paths.results_dir / "cv_results"
     cv_dir.mkdir(exist_ok=True)
+    ckpt = _Checkpoints(cfg, _fingerprint(cfg, fast))   # fresh=True ignores, then overwrites
 
     rows, preds, best_params = [], [], {}
     for outcome in OUTCOMES:
@@ -84,40 +129,63 @@ def stage_train(cfg: Config, fast: bool = False) -> pd.DataFrame:
                      outcome, lab, tr.sum(), te.sum(), 100 * y_tr.mean())
             best = {}
             for spec in get_model_specs(cfg.train.seed, fast=fast):
-                search, secs = tune(spec, X[tr], y_tr, lab, cfg, memory)
-                est = search.best_estimator_
-                est.set_params(memory=None)
+                key = f"{outcome}__{lab}__{spec.name}"
+                hit = None if fresh else ckpt.load(key, outcome, lab, spec.name)
+                if hit is not None:
+                    meta, pred, est = hit
+                    log.info("  %-14s resumed from checkpoint (CV AUROC %.3f)",
+                             spec.name, meta["row"]["cv_auroc_mean"])
+                    row, params = meta["row"], meta["best_params"]
+                else:
+                    search, secs = tune(spec, X[tr], y_tr, lab, cfg, memory)
+                    est = search.best_estimator_
+                    est.set_params(memory=None)
+                    score, is_prob = predict_score(est, X[te])
+                    row = {"outcome": outcome, "lab_strategy": lab, "model": spec.name,
+                           "cv_auroc_mean": float(search.best_score_),
+                           "cv_auroc_std": float(search.cv_results_["std_test_score"]
+                                                 [search.best_index_]),
+                           "fit_seconds": secs,
+                           **evaluate(y_te, score, cfg.train.n_bootstrap,
+                                      cfg.train.seed, is_prob)}
+                    params = {k.replace("clf__", ""): _jsonable(v)
+                              for k, v in search.best_params_.items()}
+                    pred = _pred_frame(outcome, lab, spec.name, X.index[te], y_te, score)
+                    pd.DataFrame(search.cv_results_).drop(columns="params").to_csv(
+                        cv_dir / f"{key}.csv", index=False)
+                    joblib.dump(est, _model_path(cfg, outcome, lab, spec.name))
+                    ckpt.save(key, row, params, pred)
                 best[spec.name] = est
-                score, is_prob = predict_score(est, X[te])
-                rows.append({"outcome": outcome, "lab_strategy": lab, "model": spec.name,
-                             "cv_auroc_mean": search.best_score_,
-                             "cv_auroc_std": float(search.cv_results_["std_test_score"]
-                                                   [search.best_index_]),
-                             "fit_seconds": secs,
-                             **evaluate(y_te, score, cfg.train.n_bootstrap,
-                                        cfg.train.seed, is_prob)})
-                preds.append(_pred_frame(outcome, lab, spec.name, X.index[te], y_te, score))
-                best_params[f"{outcome}/{lab}/{spec.name}"] = {
-                    k.replace("clf__", ""): _jsonable(v) for k, v in search.best_params_.items()}
-                pd.DataFrame(search.cv_results_).drop(columns="params").to_csv(
-                    cv_dir / f"{outcome}__{lab}__{spec.name}.csv", index=False)
-                joblib.dump(est, _model_path(cfg, outcome, lab, spec.name))
+                rows.append(row)
+                preds.append(pred)
+                best_params[f"{outcome}/{lab}/{spec.name}"] = params
 
             # ---- soft-voting ensemble of tuned members
-            t0 = time.perf_counter()
-            ens = ensemble_from(best)
-            cv_mean, cv_std = cv_auroc(ens, X[tr], y_tr, cfg)
-            ens.fit(X[tr], y_tr)
-            score, is_prob = predict_score(ens, X[te])
-            rows.append({"outcome": outcome, "lab_strategy": lab, "model": "ensemble",
-                         "cv_auroc_mean": cv_mean, "cv_auroc_std": cv_std,
-                         "fit_seconds": time.perf_counter() - t0,
-                         **evaluate(y_te, score, cfg.train.n_bootstrap, cfg.train.seed,
-                                    is_prob)})
-            preds.append(_pred_frame(outcome, lab, "ensemble", X.index[te], y_te, score))
-            joblib.dump(ens, _model_path(cfg, outcome, lab, "ensemble"))
-            log.info("  %-14s CV AUROC %.3f | TEST AUROC %.3f", "ensemble", cv_mean,
-                     rows[-1]["test_auroc"])
+            key = f"{outcome}__{lab}__ensemble"
+            hit = None if fresh else ckpt.load(key, outcome, lab, "ensemble")
+            if hit is not None:
+                meta, pred, _ = hit
+                row = meta["row"]
+                log.info("  %-14s resumed from checkpoint", "ensemble")
+            else:
+                t0 = time.perf_counter()
+                ens = ensemble_from(best)
+                cv_mean, cv_std = cv_auroc(ens, X[tr], y_tr, cfg)
+                ens.fit(X[tr], y_tr)
+                score, is_prob = predict_score(ens, X[te])
+                row = {"outcome": outcome, "lab_strategy": lab, "model": "ensemble",
+                       "cv_auroc_mean": cv_mean, "cv_auroc_std": cv_std,
+                       "fit_seconds": time.perf_counter() - t0,
+                       **evaluate(y_te, score, cfg.train.n_bootstrap, cfg.train.seed,
+                                  is_prob)}
+                pred = _pred_frame(outcome, lab, "ensemble", X.index[te], y_te, score)
+                joblib.dump(ens, _model_path(cfg, outcome, lab, "ensemble"))
+                ckpt.save(key, row, {m: best_params[f"{outcome}/{lab}/{m}"]
+                                     for m in ENSEMBLE_MEMBERS}, pred)
+            rows.append(row)
+            preds.append(pred)
+            log.info("  %-14s CV AUROC %.3f | TEST AUROC %.3f", "ensemble",
+                     row["cv_auroc_mean"], row["test_auroc"])
 
     metrics = pd.DataFrame(rows)
     metrics.to_csv(paths.results_dir / "metrics.csv", index=False)

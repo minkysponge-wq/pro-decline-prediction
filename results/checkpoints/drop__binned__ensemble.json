@@ -1,0 +1,42 @@
+{
+  "fingerprint": "dc4c0d127e37403b",
+  "row": {
+    "outcome": "drop",
+    "lab_strategy": "binned",
+    "model": "ensemble",
+    "cv_auroc_mean": 0.7553508094358012,
+    "cv_auroc_std": 0.025074472670746716,
+    "fit_seconds": 15.692904825999989,
+    "test_auroc": 0.7188151856487275,
+    "test_auroc_ci_low": 0.6258107698524954,
+    "test_auroc_ci_high": 0.8059656386826576,
+    "test_auprc": 0.4148587435016961,
+    "test_prevalence": 0.18725099601593626,
+    "test_brier": 0.13813551807913124
+  },
+  "best_params": {
+    "lasso": {
+      "C": 0.1
+    },
+    "ridge": {
+      "C": 0.001
+    },
+    "elasticnet": {
+      "C": 0.01,
+      "l1_ratio": 0.5
+    },
+    "random_forest": {
+      "max_features": "sqrt",
+      "min_samples_split": 10
+    },
+    "lightgbm": {
+      "learning_rate": 0.05,
+      "n_estimators": 200,
+      "num_leaves": 4
+    },
+    "svm": {
+      "C": 1.0,
+      "kernel": "rbf"
+    }
+  }
+}

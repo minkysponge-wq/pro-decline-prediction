@@ -1,0 +1,42 @@
+{
+  "fingerprint": "dc4c0d127e37403b",
+  "row": {
+    "outcome": "threshold",
+    "lab_strategy": "knn",
+    "model": "ensemble",
+    "cv_auroc_mean": 0.8094813695991816,
+    "cv_auroc_std": 0.024653866067694912,
+    "fit_seconds": 18.594047558,
+    "test_auroc": 0.863537710255019,
+    "test_auroc_ci_low": 0.8137287555678313,
+    "test_auroc_ci_high": 0.9099422178548,
+    "test_auprc": 0.7053407560395508,
+    "test_prevalence": 0.22709163346613545,
+    "test_brier": 0.12299034330686466
+  },
+  "best_params": {
+    "lasso": {
+      "C": 0.1
+    },
+    "ridge": {
+      "C": 0.001
+    },
+    "elasticnet": {
+      "C": 0.01,
+      "l1_ratio": 0.5
+    },
+    "random_forest": {
+      "max_features": "sqrt",
+      "min_samples_split": 100
+    },
+    "lightgbm": {
+      "learning_rate": 0.05,
+      "n_estimators": 200,
+      "num_leaves": 4
+    },
+    "svm": {
+      "C": 1.0,
+      "kernel": "rbf"
+    }
+  }
+}

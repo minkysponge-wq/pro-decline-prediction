@@ -1,0 +1,142 @@
+{
+  "drop/knn/lasso": {
+    "C": 0.1
+  },
+  "drop/knn/ridge": {
+    "C": 0.001
+  },
+  "drop/knn/elasticnet": {
+    "C": 0.01,
+    "l1_ratio": 0.5
+  },
+  "drop/knn/random_forest": {
+    "max_features": "sqrt",
+    "min_samples_split": 100
+  },
+  "drop/knn/lightgbm": {
+    "learning_rate": 0.05,
+    "n_estimators": 200,
+    "num_leaves": 4
+  },
+  "drop/knn/mlp": {
+    "alpha": 10.0,
+    "hidden_layer_sizes": [
+      100,
+      50,
+      10
+    ]
+  },
+  "drop/knn/svm": {
+    "C": 0.01,
+    "kernel": "rbf"
+  },
+  "drop/knn/knn": {
+    "n_neighbors": 50,
+    "weights": "uniform"
+  },
+  "drop/binned/lasso": {
+    "C": 0.1
+  },
+  "drop/binned/ridge": {
+    "C": 0.001
+  },
+  "drop/binned/elasticnet": {
+    "C": 0.01,
+    "l1_ratio": 0.5
+  },
+  "drop/binned/random_forest": {
+    "max_features": "sqrt",
+    "min_samples_split": 10
+  },
+  "drop/binned/lightgbm": {
+    "learning_rate": 0.05,
+    "n_estimators": 200,
+    "num_leaves": 4
+  },
+  "drop/binned/mlp": {
+    "alpha": 0.01,
+    "hidden_layer_sizes": [
+      100,
+      50,
+      10
+    ]
+  },
+  "drop/binned/svm": {
+    "C": 1.0,
+    "kernel": "rbf"
+  },
+  "drop/binned/knn": {
+    "n_neighbors": 50,
+    "weights": "distance"
+  },
+  "threshold/knn/lasso": {
+    "C": 0.1
+  },
+  "threshold/knn/ridge": {
+    "C": 0.001
+  },
+  "threshold/knn/elasticnet": {
+    "C": 0.01,
+    "l1_ratio": 0.5
+  },
+  "threshold/knn/random_forest": {
+    "max_features": "sqrt",
+    "min_samples_split": 100
+  },
+  "threshold/knn/lightgbm": {
+    "learning_rate": 0.05,
+    "n_estimators": 200,
+    "num_leaves": 4
+  },
+  "threshold/knn/mlp": {
+    "alpha": 0.01,
+    "hidden_layer_sizes": [
+      100,
+      50,
+      10
+    ]
+  },
+  "threshold/knn/svm": {
+    "C": 1.0,
+    "kernel": "rbf"
+  },
+  "threshold/knn/knn": {
+    "n_neighbors": 50,
+    "weights": "distance"
+  },
+  "threshold/binned/lasso": {
+    "C": 0.1
+  },
+  "threshold/binned/ridge": {
+    "C": 0.001
+  },
+  "threshold/binned/elasticnet": {
+    "C": 0.01,
+    "l1_ratio": 0.5
+  },
+  "threshold/binned/random_forest": {
+    "max_features": "sqrt",
+    "min_samples_split": 100
+  },
+  "threshold/binned/lightgbm": {
+    "learning_rate": 0.05,
+    "n_estimators": 200,
+    "num_leaves": 4
+  },
+  "threshold/binned/mlp": {
+    "alpha": 10.0,
+    "hidden_layer_sizes": [
+      100,
+      50,
+      10
+    ]
+  },
+  "threshold/binned/svm": {
+    "C": 1.0,
+    "kernel": "rbf"
+  },
+  "threshold/binned/knn": {
+    "n_neighbors": 50,
+    "weights": "distance"
+  }
+}

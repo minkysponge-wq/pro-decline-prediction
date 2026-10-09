@@ -1,0 +1,25 @@
+{
+  "fingerprint": "dc4c0d127e37403b",
+  "row": {
+    "outcome": "threshold",
+    "lab_strategy": "knn",
+    "model": "mlp",
+    "cv_auroc_mean": 0.6414539744189114,
+    "cv_auroc_std": 0.07577796014251797,
+    "fit_seconds": 2.8207664720000025,
+    "test_auroc": 0.791101465002713,
+    "test_auroc_ci_low": 0.7300111342332877,
+    "test_auroc_ci_high": 0.8469610152961707,
+    "test_auprc": 0.5301420987387842,
+    "test_prevalence": 0.22709163346613545,
+    "test_brier": 0.1417194341356266
+  },
+  "best_params": {
+    "alpha": 0.01,
+    "hidden_layer_sizes": [
+      100,
+      50,
+      10
+    ]
+  }
+}

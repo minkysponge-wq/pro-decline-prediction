@@ -64,9 +64,10 @@ def get_model_specs(seed: int, fast: bool = False) -> list[ModelSpec]:
         ModelSpec("ridge", "logistic", logistic("ridge", seed), {"C": _c_grid(lam)}),
         ModelSpec(
             "elasticnet", "logistic", logistic("elasticnet", seed),
-            # paper: 11 lambdas x 9 L1-ratios (99 fits/fold). saga is slow, so we
-            # keep the informative range of lambda (10^-1..10^3) x 5 ratios.
-            {"C": _c_grid(10.0 ** np.array([1, 2]) if fast else 10.0 ** np.arange(-1, 4)),
+            # paper: 11 lambdas x 9 L1-ratios (99 fits/fold). saga is slow, and
+            # converges very slowly for weak penalties (lambda < 1) which never
+            # won in pilot runs; we search lambda 10^0..10^3 x 5 ratios.
+            {"C": _c_grid(10.0 ** np.array([1, 2]) if fast else 10.0 ** np.arange(0, 4)),
              "l1_ratio": [0.5] if fast else [0.1, 0.3, 0.5, 0.7, 0.9]},
         ),
         ModelSpec(
