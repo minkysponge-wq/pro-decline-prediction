@@ -73,7 +73,23 @@ def main() -> None:
                   - m[m.lab_strategy == "binned"].set_index(["outcome", "model"])["test_auroc"])
     knn_wins = int((knn_vs_bin > 0).sum())
     worst = (singles.groupby("model")["test_auroc"].mean().sort_values().index[:2])
+    top_cv = m.loc[m.groupby(["outcome", "lab_strategy"])["cv_auroc_mean"].idxmax()]
+    ens_cv_wins = int((top_cv["model"] == "ensemble").sum())
+    cv_summary = ", ".join(
+        f"{o} / {lab} labs {r:.3f}" for o, lab, r in
+        m[m.model == "ensemble"][["outcome", "lab_strategy", "cv_auroc_mean"]].itertuples(
+            index=False))
     full_drop = abl_auc("drop", "all features")
+    preds = pd.read_csv(RES / "test_predictions.csv")
+    n_pos_drop = int(preds.query("model == 'ensemble' and lab_strategy == 'knn' "
+                                 "and outcome == 'drop'")["y_true"].sum())
+    # guard the prose claim that single-group removals (other than PROMIS) stay inside the CI
+    for o in ("drop", "threshold"):
+        a = abl[abl.outcome == o].set_index("condition")
+        half_ci = (a.loc["all features", "test_auroc_ci_high"]
+                   - a.loc["all features", "test_auroc_ci_low"]) / 2
+        others = a.drop(["all features", "- promis", "- demo & promis"])["test_auroc"]
+        assert ((others - a.loc["all features", "test_auroc"]).abs() < half_ci).all(), o
 
     story = [
         Paragraph("Predicting a Decline in Patient-Reported Outcomes for Cancer Patients "
@@ -186,19 +202,24 @@ def main() -> None:
             "bootstrap CIs are in <font face='Courier'>results/metrics.csv</font>.", CAP)]),
         Spacer(1, 4),
         Paragraph(
-            f"The ensemble reached a test AUROC of {ci('drop', 'knn', 'ensemble')} for Drop and "
-            f"{ci('threshold', 'knn', 'ensemble')} for Threshold with KNN-imputed labs (paper: "
-            "0.771 and 0.752). The best single models were "
+            f"<b>Model selection.</b> Ranked by cross-validated AUROC (the selection criterion), "
+            f"the ensemble was the top model in {ens_cv_wins} of 4 settings "
+            f"({cv_summary}). On the held-out test set it reached {ci('drop', 'knn', 'ensemble')} "
+            f"for Drop and {ci('threshold', 'knn', 'ensemble')} for Threshold with KNN labs "
+            "(paper: 0.771 and 0.752). The best single test scores were "
             f"{LABELS[best_single['drop'].model]} for Drop ({best_single['drop'].test_auroc:.3f}, "
             f"{best_single['drop'].lab_strategy} labs) and {LABELS[best_single['threshold'].model]} "
-            f"for Threshold ({best_single['threshold'].test_auroc:.3f}, "
-            f"{best_single['threshold'].lab_strategy} labs). The ensemble's cross-validated AUROC "
-            "had the smallest spread across folds, and it was consistently at or near the top, "
-            "matching the paper's finding. As in the paper, "
-            f"{LABELS[worst[0]]} and {LABELS[worst[1]]} performed worst; both suffer in a "
-            "high-dimensional, small-sample setting. KNN-imputed labs beat binned labs in "
-            f"{knn_wins} of {len(knn_vs_bin)} model and outcome pairs, so the paper's preference "
-            "for imputed labs was not clearly reproduced here, and the CIs overlap.", BODY),
+            f"for Threshold ({best_single['threshold'].test_auroc:.3f}). Every gap between the "
+            "ensemble and the best single model lies well inside the 95% CIs (about +/-0.09 for "
+            f"Drop with only {n_pos_drop} positive test patients), so"
+            "  the honest reading is that the "
+            "ensemble and the penalised linear models perform equivalently, and the ensemble is "
+            "the more robust choice by CV. As in the paper, "
+            f"{LABELS[worst[0]]} and {LABELS[worst[1]]} performed worst; both struggle with "
+            "several hundred mostly sparse features and ~1,000 training patients. KNN-imputed labs beat "
+            f"binned labs in {knn_wins} of {len(knn_vs_bin)} model and outcome pairs with "
+            "overlapping CIs, so unlike the paper we find no clear winner between the two lab "
+            "strategies.", BODY),
         Paragraph(
             f"<b>Ablation</b> (ensemble, KNN labs): with all features, Drop AUROC is "
             f"{f3(full_drop)}. Removing the baseline PROMIS features lowers it to "
@@ -215,13 +236,18 @@ def main() -> None:
                       Paragraph("Figure 1. Ensemble test AUROC with each feature group removed "
                                 "(error bars: 95% bootstrap CI).", CAP)]),
 
+        KeepTogether([Image(str(RES / "figures" / "roc_curves.png"), width=13.5 * cm,
+                            height=13.5 * cm * 4.4 / 10 * 0.93),
+                      Paragraph("Figure 2. Test ROC curves: the ensemble and the three best "
+                                "single models (KNN-imputed labs).", CAP)]),
         Paragraph("6. Conclusions", H),
         Paragraph(
             "We re-implemented the full Ostberg &amp; Peterson pipeline, from cohort selection "
             "through time-weighted EHR featurisation, prevalence filtering, two lab strategies, "
             "eight tuned model families, a soft-voting ensemble and ablation, on a synthetic "
             "EHR built to mirror STARR. The paper's qualitative findings were reproduced: the "
-            "ensemble is a strong and stable choice; KNN and the MLP underperform; and baseline "
+            "ensemble is the most robust choice by cross-validation, with penalised linear models "
+            "a close equal; KNN and the MLP underperform; and baseline "
             "PROMIS scores carry most of the signal, especially for Drop. Our protocol is "
             "stricter than the original (no test-set early stopping, preprocessing fitted "
             "inside CV, a regression test for leakage). <b>Limitations</b>: the data is "

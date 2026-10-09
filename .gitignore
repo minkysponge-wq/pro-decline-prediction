@@ -12,3 +12,4 @@ data/processed/
 # large binary models; metrics/figures ARE committed
 results/models/
 results/cv_results/
+results/checkpoints/

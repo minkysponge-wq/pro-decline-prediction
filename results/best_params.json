@@ -3,36 +3,36 @@
     "C": 0.1
   },
   "drop/knn/ridge": {
-    "C": 0.001
+    "C": 0.0001
   },
   "drop/knn/elasticnet": {
     "C": 0.01,
-    "l1_ratio": 0.5
+    "l1_ratio": 0.3
   },
   "drop/knn/random_forest": {
-    "max_features": "sqrt",
-    "min_samples_split": 100
+    "max_features": 0.3,
+    "min_samples_split": 2
   },
   "drop/knn/lightgbm": {
     "learning_rate": 0.05,
-    "n_estimators": 200,
+    "n_estimators": 100,
     "num_leaves": 4
   },
   "drop/knn/mlp": {
-    "alpha": 10.0,
+    "alpha": 0.01,
     "hidden_layer_sizes": [
+      300,
       100,
-      50,
       10
     ]
   },
   "drop/knn/svm": {
-    "C": 0.01,
-    "kernel": "rbf"
+    "C": 1.0,
+    "kernel": "sigmoid"
   },
   "drop/knn/knn": {
-    "n_neighbors": 50,
-    "weights": "uniform"
+    "n_neighbors": 100,
+    "weights": "distance"
   },
   "drop/binned/lasso": {
     "C": 0.1
@@ -42,101 +42,101 @@
   },
   "drop/binned/elasticnet": {
     "C": 0.01,
-    "l1_ratio": 0.5
+    "l1_ratio": 0.3
   },
   "drop/binned/random_forest": {
     "max_features": "sqrt",
-    "min_samples_split": 10
+    "min_samples_split": 5
   },
   "drop/binned/lightgbm": {
-    "learning_rate": 0.05,
-    "n_estimators": 200,
-    "num_leaves": 4
+    "learning_rate": 0.01,
+    "n_estimators": 300,
+    "num_leaves": 8
   },
   "drop/binned/mlp": {
-    "alpha": 0.01,
+    "alpha": 10.0,
     "hidden_layer_sizes": [
-      100,
-      50,
+      1000,
+      500,
       10
     ]
   },
   "drop/binned/svm": {
-    "C": 1.0,
+    "C": 10.0,
     "kernel": "rbf"
   },
   "drop/binned/knn": {
-    "n_neighbors": 50,
+    "n_neighbors": 100,
     "weights": "distance"
   },
   "threshold/knn/lasso": {
     "C": 0.1
   },
   "threshold/knn/ridge": {
-    "C": 0.001
+    "C": 1e-07
   },
   "threshold/knn/elasticnet": {
     "C": 0.01,
-    "l1_ratio": 0.5
+    "l1_ratio": 0.3
   },
   "threshold/knn/random_forest": {
     "max_features": "sqrt",
-    "min_samples_split": 100
+    "min_samples_split": 2
   },
   "threshold/knn/lightgbm": {
-    "learning_rate": 0.05,
-    "n_estimators": 200,
-    "num_leaves": 4
+    "learning_rate": 0.01,
+    "n_estimators": 300,
+    "num_leaves": 16
   },
   "threshold/knn/mlp": {
-    "alpha": 0.01,
+    "alpha": 1.0,
     "hidden_layer_sizes": [
-      100,
-      50,
+      1000,
+      500,
       10
     ]
   },
   "threshold/knn/svm": {
-    "C": 1.0,
-    "kernel": "rbf"
+    "C": 0.0001,
+    "kernel": "sigmoid"
   },
   "threshold/knn/knn": {
-    "n_neighbors": 50,
+    "n_neighbors": 100,
     "weights": "distance"
   },
   "threshold/binned/lasso": {
-    "C": 0.1
+    "C": 0.01
   },
   "threshold/binned/ridge": {
-    "C": 0.001
+    "C": 1e-08
   },
   "threshold/binned/elasticnet": {
     "C": 0.01,
-    "l1_ratio": 0.5
+    "l1_ratio": 0.3
   },
   "threshold/binned/random_forest": {
     "max_features": "sqrt",
-    "min_samples_split": 100
+    "min_samples_split": 2
   },
   "threshold/binned/lightgbm": {
-    "learning_rate": 0.05,
-    "n_estimators": 200,
-    "num_leaves": 4
+    "learning_rate": 0.01,
+    "n_estimators": 100,
+    "num_leaves": 16
   },
   "threshold/binned/mlp": {
-    "alpha": 10.0,
+    "alpha": 1.0,
     "hidden_layer_sizes": [
-      100,
-      50,
+      1000,
+      500,
       10
     ]
   },
   "threshold/binned/svm": {
     "C": 1.0,
-    "kernel": "rbf"
+    "kernel": "poly"
   },
   "threshold/binned/knn": {
-    "n_neighbors": 50,
+    "n_neighbors": 100,
     "weights": "distance"
   }
 }

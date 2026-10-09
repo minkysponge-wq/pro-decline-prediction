@@ -73,10 +73,10 @@ cells = [
          "from prodecline.models.training import make_pipeline\n"
          "best = json.loads((cfg.paths.results_dir / 'best_params.json').read_text())['drop/knn/lasso']\n"
          "pipe = make_pipeline(logistic('lasso', cfg.train.seed), 'knn', cfg).set_params(clf__C=best['C'])\n"
-         "%time pipe.fit(X[tr], cohort.drop[tr])\n"
+         "%time pipe.fit(X[tr], cohort['drop'][tr])\n"
          "coef = pipe.named_steps['clf'].coef_.ravel()\n"
          "print(f\"best C={best['C']}: {(coef != 0).sum()} of {coef.size} features kept | test AUROC \"\n"
-         "      f\"{roc_auc_score(cohort.drop[te], pipe.predict_proba(X[te])[:, 1]):.3f}\")"),
+         "      f\"{roc_auc_score(cohort['drop'][te], pipe.predict_proba(X[te])[:, 1]):.3f}\")"),
 ]
 
 nb = nbf.v4.new_notebook(cells=cells, metadata={

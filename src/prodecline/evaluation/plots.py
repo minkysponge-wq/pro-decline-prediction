@@ -53,7 +53,7 @@ def model_comparison(metrics: pd.DataFrame, out) -> None:
                    label="KNN-imputed labs" if lab == "knn" else "Binned labs",
                    yerr=err, error_kw={"ecolor": INK_2, "elinewidth": 1, "capsize": 2})
         ax.axhline(0.5, color=INK_2, lw=1, ls="--")
-        ax.text(len(order) - 0.5, 0.505, "chance", color=INK_2, ha="right", fontsize=8)
+        ax.text(-0.55, 0.505, "chance", color=INK_2, ha="left", va="bottom", fontsize=8)
         ax.set_xticks(x, [MODEL_LABELS[m] for m in order], rotation=35, ha="right")
         ax.set_ylim(0.4, 1.0)
         ax.set_title(OUTCOME_LABELS[outcome])
