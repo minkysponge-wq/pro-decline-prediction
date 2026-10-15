@@ -33,7 +33,7 @@ pip install -e .
 
 python -m prodecline all --fast   # ~5 min: data -> train -> ablation -> figures -> summary
 python -m prodecline all          # full paper grids, 10-fold CV (~1 h on 2 cores; resumable)
-python -m pytest                  # 19 tests, ~10 s
+python -m pytest                  # 22 tests, ~10 s
 jupyter notebook notebooks/demo.ipynb   # live demo
 ```
 
@@ -193,6 +193,43 @@ Paper (ensemble, KNN labs): Drop 0.771, Threshold 0.752.
 ![Ablation](results/figures/ablation.png)
 ![Top LASSO features](results/figures/top_features.png)
 <!-- RESULTS:END -->
+---
+
+## Extension: classification accuracy
+
+The paper reports AUROC. We also measured plain **accuracy** and tried to raise it, deciding
+everything on training data only. The test set is used once.
+
+```bash
+python docs/classification_report.py   # accuracy, precision, recall, F1, confusion matrix
+python -m prodecline improve           # burden features + cut-off tuned on training data
+python docs/accuracy_ceiling.py        # best accuracy ANY model could reach on this data
+```
+
+| Ensemble test accuracy (n = 251) | Drop | Threshold |
+|---|---|---|
+| Always predict "no" | 81.3% | 77.3% |
+| Paper ensemble, default cut-off 0.5 | 81.7% | 82.5% |
+| **Paper ensemble, cut-off tuned on training data** | **82.5%** | **84.1%** |
+| + burden features, tuned cut-off | 81.7% | 84.1% |
+| Theoretical ceiling (a model that knows the hidden frailty) | 83.7% | 83.3% |
+
+- **The tuned cut-off is the change that helps.**
+  - With ~20% positives, the default cut-off of 0.5 almost never predicts "yes".
+  - We choose the cut-off that maximises accuracy on 10-fold out-of-fold *training* predictions.
+  - Threshold recall rises from 25% to 44%.
+- **Burden features** (counts of diagnoses, medications, procedures, lab tests and visits, plus
+  abnormal prognostic labs at fixed clinical cut-offs, in `features/burden.py`):
+  - They raise cross-validated AUROC; for example, Elastic Net on Drop goes from 0.733 to 0.772.
+  - Drop test AUROC rises from 0.692 to 0.701.
+  - Test accuracy does not change.
+- **We are at the ceiling.** The simulator adds unpredictable noise (SD 5.5 points), so even a
+  model that knew every hidden variable would reach only ~84% accuracy. Accuracy differences
+  of ±1 patient (0.4%) are noise; the 95% CIs are about ±4.5 points.
+
+We deliberately did not pick whichever variant scored best on the test set, because that would
+be overfitting to the test set.
+
 
 ---
 

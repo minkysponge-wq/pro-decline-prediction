@@ -129,7 +129,7 @@ supportive care.
 `models/` (registry, training) → `evaluation/` (metrics, plots). There's a CLI with independent
 stages, and every constant from the paper lives once in `config.py`.
 
-**How do you know it's correct?** 19 pytest tests, covering:
+**How do you know it's correct?** 22 pytest tests, covering:
 - leakage
 - label definitions
 - inclusion windows
@@ -143,3 +143,22 @@ stages, and every constant from the paper lives once in `config.py`.
 - The ensemble's CV score is mildly optimistic, because its members were tuned on the same folds;
   nested CV would fix this.
 - We didn't check calibration.
+
+## Accuracy (extension)
+
+**What's your accuracy?**
+About 82.5% (Drop) and 84.1% (Threshold) on the test set, with the decision cut-off tuned on
+training data. Always answering "no" already scores 81.3% and 77.3%, which is why we lead with
+AUROC.
+
+**Can you improve it?**
+We tried, using training data only:
+- A cut-off tuned on out-of-fold training predictions gives about +1 to +1.6 points.
+- Burden features improve AUROC, but not accuracy.
+
+`docs/accuracy_ceiling.py` shows that even a model knowing every hidden variable reaches only
+~84%, because the remaining variation is random noise. So we are at the ceiling for this data.
+
+**Why not just pick the cut-off that's best on the test set?**
+That would tune to the test set (leakage) and overstate performance. We choose it on training
+data and apply it once to the test set.

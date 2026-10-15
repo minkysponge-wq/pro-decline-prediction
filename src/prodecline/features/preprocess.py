@@ -122,6 +122,7 @@ def build_preprocessor(lab_strategy: str, cfg: FeatureConfig) -> Pipeline:
             ("vital", numeric, _sel("vital")),
             ("util", numeric, _sel("util")),
             ("promis", numeric, _sel("promis")),
+            ("burden", numeric, _sel("burden")),        # extension features (if present)
             ("demo_num", numeric, make_column_selector(pattern="^demo__age$")),
             ("demo_cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False),
              demo_cat),

@@ -13,3 +13,4 @@ data/processed/
 results/models/
 results/cv_results/
 results/checkpoints/
+results/improved/*.joblib

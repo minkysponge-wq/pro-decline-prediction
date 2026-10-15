@@ -6,6 +6,7 @@
     python -m prodecline figures     # plots into results/figures
     python -m prodecline all         # everything above, in order
     python -m prodecline summary     # print the results table
+    python -m prodecline improve     # extension: burden features + tuned cut-off (accuracy)
 
 Add ``--fast`` for a ~5-minute run (5-fold CV, small grids) - useful for demos.
 Training is checkpointed per model: an interrupted ``train`` resumes where it
@@ -46,7 +47,7 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(prog="prodecline", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("stage", choices=["data", "train", "ablate", "figures", "all",
-                                          "summary"])
+                                          "summary", "improve", "improve-summary"])
     parser.add_argument("--fast", action="store_true", help="small grids, 5-fold CV")
     parser.add_argument("--fresh", action="store_true",
                         help="ignore training checkpoints and retrain everything")
@@ -81,6 +82,13 @@ def main(argv=None) -> None:
         plots.make_all(cfg)
     if args.stage in ("summary", "all"):
         summary(cfg)
+    if args.stage == "improve":                 # extension; needs `train` to have run
+        from . import improve
+        improve.stage_improve(cfg, fast=args.fast)
+        improve.summary(cfg)
+    if args.stage == "improve-summary":
+        from . import improve
+        improve.summary(cfg)
     logging.getLogger("prodecline").info("Done in %.1f min", (time.perf_counter() - t0) / 60)
 
 
