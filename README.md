@@ -239,7 +239,7 @@ be overfitting to the test set.
 | Sampreeth Jaladi | data simulation, cohort construction, featurisation, tests |
 | Sharvesh K | model zoo, training and ensemble, ablation, evaluation and figures |
 
-*(Edit to reflect your actual split; commit history should match.)*
+
 
 ## Reference
 Ostberg, N. & Peterson, R. *Predicting a Decline in Patient Reported Outcomes for Cancer Patients
